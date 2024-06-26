@@ -1,0 +1,37 @@
+#loading neccessary packages
+library(limma)
+library(edgeR)
+library(airway)
+library(DESeq2)
+
+# Load the airway dataset
+data("airway")
+
+# Convert the SummarizedExperiment object to DGEList object
+counts <- assay(airway)
+metadata <- colData(airway)
+
+# Create DGEList object
+group <- factor(metadata$dex)
+dge <- DGEList(counts=counts, group=group)
+
+# Normalize the counts
+dge <- calcNormFactors(dge)
+
+# Apply voom transformation to prepare for linear modeling
+v <- voom(dge, plot=TRUE)
+
+# Create a design matrix
+design <- model.matrix(~ group)
+
+# Fit a linear model to the data
+fit <- lmFit(v, design)
+
+# Apply empirical Bayes moderation
+fit <- eBayes(fit)
+
+# Get the top differentially expressed genes
+results <- topTable(fit, coef=2, adjust="BH", number=Inf)
+
+# View the results
+head(results)
